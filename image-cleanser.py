@@ -7,13 +7,24 @@ from getopt import gnu_getopt, GetoptError
 
 
 def median_image(images):
-	arrays = [np.asarray(image) for image in images]
+	mode = images[0].mode
+	arrays = []
+	for image in images:
+		if image.mode != mode:
+			raise ValueError
+		
+		arrays.append(np.asarray(image))
 	
 	dtype = arrays[0].dtype
+	size = arrays[0].size
 	for array in arrays:
 		assert array.dtype == dtype
+		
+		if array.size != size:
+			raise ValueError
 	
-	return Image.fromarray(np.median(arrays, axis=0).astype(dtype))
+	median_array = np.median(arrays, axis=0, overwrite_input=True).astype(dtype)
+	return Image.fromarray(median_array, mode=mode)
 
 
 def process_argv():
@@ -44,6 +55,9 @@ def main():
 			output_image.show()
 	except OSError as err:
 		print(err, file=stderr)
+		exit(1)
+	except ValueError as err:
+		print('Input images must all have the exact same width, height, and color mode', file=stderr)
 		exit(1)
 
 
