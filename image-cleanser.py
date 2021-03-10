@@ -27,36 +27,48 @@ def median_image(images):
 	return Image.fromarray(median_array, mode=mode)
 
 
+def print_help():
+	print(f'Usage: {argv[0]} INPUT_FILES [-o, --output] OUTPUT_FILE')
+
+
 def process_argv():
-	try:
-		options, arguments = gnu_getopt(argv[1:], 'o:h', ['output =', 'help'])
-		options = dict(options)
-		
-		if ('-h' in options) or ('--help' in options) or (len(arguments) == 0):
-			print('Usage: ' + argv[0] + ' INPUT_FILES [-o, --output] OUTPUT_FILE')
-			exit()
-		else:
-			return arguments, options.get('-o', options.get('--options'))
-	except GetoptError as err:
-		print(err, file=stderr)
+	options, input_filenames = gnu_getopt(argv[1:], 'o:h', ['output=', 'help'])
+	
+	if len(input_filenames) == 0:
+		print_help()
 		exit(1)
+	
+	output_filename = None
+	for option, parameter in options:
+		if option in ('-o', '--output'):
+			output_filename = parameter
+		elif option in ('-h', '--help'):
+			print_help()
+			exit()
+	
+	return input_filenames, output_filename
 
 
 def main():
-	input_filenames, output_filename = process_argv()
-	
 	try:
+		input_filenames, output_filename = process_argv()
+		
+		print('Loading images...')
 		input_images = [Image.open(filename) for filename in input_filenames]
+		
+		print('Processing images...')
 		output_image = median_image(input_images)
 		
 		if output_filename is not None:
+			print('Saving image...')
 			output_image.save(output_filename)
 		else:
+			print('Displaying image...')
 			output_image.show()
-	except OSError as err:
+	except (GetoptError, OSError) as err:
 		print(err, file=stderr)
 		exit(1)
-	except ValueError as err:
+	except ValueError:
 		print('Input images must all have the exact same width, height, and color mode', file=stderr)
 		exit(1)
 
